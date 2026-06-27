@@ -11,6 +11,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mi Cartera">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===== FIREBASE CONFIG — completar con los datos de tu proyecto ===== */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyD9ApV2F3BA7Thjwxfd2xXYhhLO1-Zvay0",
+  authDomain:        "mi-cartera-b15a0.firebaseapp.com",
+  projectId:         "mi-cartera-b15a0",
+  storageBucket:     "mi-cartera-b15a0.firebasestorage.app",
+  messagingSenderId: "763436143261",
+  appId:             "1:763436143261:web:f0ac74e9e2d2264162ba74"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+let currentUser = null;
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -299,9 +318,34 @@ label{display:block;font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;
 .map-table select{padding:5px 7px;font-size:0.8rem;}
 .import-preview{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-faint);background:var(--surface-2);border-radius:6px;padding:8px 10px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .import-actions{display:flex;gap:10px;justify-content:flex-end;}
+/* Login screen */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:24px;}
+#loginScreen.hidden{display:none;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 32px;display:flex;flex-direction:column;align-items:center;gap:20px;max-width:340px;width:90%;}
+.login-logo{font-size:2rem;font-weight:700;color:var(--accent);letter-spacing:-0.03em;}
+.login-sub{font-size:0.85rem;color:var(--text-muted);text-align:center;line-height:1.5;}
+.btn-google{display:flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0;border-radius:8px;padding:10px 20px;font-size:0.9rem;font-weight:500;cursor:pointer;width:100%;justify-content:center;transition:box-shadow .15s;}
+.btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.btn-google svg{width:20px;height:20px;flex-shrink:0;}
+.login-footer{font-size:0.72rem;color:var(--text-faint);text-align:center;}
+.signout-btn{font-size:0.72rem;color:var(--text-faint);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;}
+.signout-btn:hover{color:var(--text-muted);}
 </style>
 </head>
 <body>
+
+<!-- Pantalla de login -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">Mi Cartera</div>
+    <div class="login-sub">Financial Benefit · Zurich Life<br>Ingresá con tu cuenta de Google para acceder a tus datos desde cualquier dispositivo.</div>
+    <button class="btn-google" id="googleSignInBtn">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continuar con Google
+    </button>
+    <div class="login-footer">Tus datos quedan guardados en tu cuenta personal y no son visibles para otros asesores.</div>
+  </div>
+</div>
 
 <div class="app-shell">
   <div class="topbar">
@@ -418,9 +462,6 @@ function projectFV(primaMensual, years, annualRatePct){
    Invest = Future / Future Joven / University, tasa anual × años de plazo de la póliza.
    Impact y Advanced: pendiente, Franco lo pasa después. */
 const NIVELES_COMISION = [
-  {key:'SCT', options:78,    invest:2.92},
-  {key:'FCT', options:72,    invest:2.70},
-  {key:'CTL', options:68,    invest:2.55},
   {key:'SC',  options:72,    invest:2.70},
   {key:'C',   options:64,    invest:2.40},
   {key:'JC',  options:57.60, invest:2.16},
@@ -509,30 +550,55 @@ function calcComisionCliente(c){
   return pa * (nivelData.invest/100) * years;
 }
 
-/* ================= STORAGE ================= */
-const STORAGE_KEY = 'cartera_contacts';
-const storageMode = (window.storage && typeof window.storage.get === 'function') ? 'cloud' : 'local';
+/* ================= STORAGE (Firebase Firestore) ================= */
+const STORAGE_KEY   = 'cartera_contacts';
+const PRODUCTOR_KEY = 'cartera_productor_nombre';
+const NIVEL_KEY     = 'cartera_productor_nivel';
+
+function userKvRef(key){
+  // Sanitizar key para Firestore (no puede contener /)
+  const safeKey = key.replace(/\//g,'__');
+  return db.collection('users').doc(currentUser.uid).collection('kv').doc(safeKey);
+}
 
 async function storageGet(key){
-  if(storageMode==='cloud'){
-    try{ const res = await window.storage.get(key, false); return res ? res.value : null; }
-    catch(e){ return null; }
+  if(!currentUser){
+    try{ return localStorage.getItem(key); }catch(e){ return null; }
   }
-  try{ return localStorage.getItem(key); }catch(e){ return null; }
+  // Archivos grandes: localStorage local (no sincronizan entre dispositivos)
+  if(key.startsWith('file:')){
+    try{ return localStorage.getItem(key); }catch(e){ return null; }
+  }
+  try{
+    const snap = await userKvRef(key).get();
+    return snap.exists ? snap.data().value : null;
+  }catch(e){ return null; }
 }
+
 async function storageSet(key, value){
-  if(storageMode==='cloud'){
-    try{ await window.storage.set(key, value, false); return true; }
-    catch(e){ return false; }
+  if(!currentUser){
+    try{ localStorage.setItem(key, value); return true; }catch(e){ return false; }
   }
-  try{ localStorage.setItem(key, value); return true; }catch(e){ return false; }
+  if(key.startsWith('file:')){
+    try{ localStorage.setItem(key, value); return true; }catch(e){ return false; }
+  }
+  try{
+    await userKvRef(key).set({ value });
+    return true;
+  }catch(e){ return false; }
 }
+
 async function storageDelete(key){
-  if(storageMode==='cloud'){
-    try{ await window.storage.delete(key, false); return true; }
-    catch(e){ return false; }
+  if(!currentUser){
+    try{ localStorage.removeItem(key); return true; }catch(e){ return false; }
   }
-  try{ localStorage.removeItem(key); return true; }catch(e){ return false; }
+  if(key.startsWith('file:')){
+    try{ localStorage.removeItem(key); return true; }catch(e){ return false; }
+  }
+  try{
+    await userKvRef(key).delete();
+    return true;
+  }catch(e){ return false; }
 }
 
 async function loadContacts(){
@@ -678,11 +744,9 @@ function renderProduccion(){
 }
 function renderStorageMode(){
   const el = document.getElementById('storageModeRow');
-  const modeText = storageMode==='cloud'
-    ? 'Guardado en tu cuenta de Claude — mismos datos si abrís esta app desde Claude en otro dispositivo.'
-    : 'Guardado local en este dispositivo/navegador — no se sincroniza solo con tus otros dispositivos.';
+  const userName = currentUser ? currentUser.displayName || currentUser.email : '';
   el.innerHTML = `
-    <div class="mode-text">${modeText}</div>
+    <div class="mode-text">☁️ Sincronizado · ${userName} &nbsp;<button class="signout-btn" id="signOutBtn">Cerrar sesión</button></div>
     <div class="backup-actions">
       <button class="btn btn-ghost btn-sm" id="exportBtn">Descargar respaldo (.json)</button>
       <label class="btn btn-ghost btn-sm" id="importLabel" style="cursor:pointer;">Restaurar respaldo
@@ -690,6 +754,7 @@ function renderStorageMode(){
       </label>
     </div>
   `;
+  document.getElementById('signOutBtn').onclick = ()=> auth.signOut();
   document.getElementById('exportBtn').onclick = exportBackup;
   document.getElementById('importInput').addEventListener('change', importBackup);
 }
@@ -1498,7 +1563,27 @@ async function init(){
     searchTerm = e.target.value; renderList();
   });
 }
-init();
+
+/* ===== Firebase Auth ===== */
+document.getElementById('googleSignInBtn').onclick = ()=>{
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => {
+    console.error('Error al iniciar sesión:', err);
+    alert('No se pudo iniciar sesión. Intentá de nuevo.');
+  });
+};
+
+auth.onAuthStateChanged(async user => {
+  const loginScreen = document.getElementById('loginScreen');
+  if(user){
+    currentUser = user;
+    loginScreen.classList.add('hidden');
+    await init();
+  } else {
+    currentUser = null;
+    loginScreen.classList.remove('hidden');
+  }
+});
 </script>
 
 <script>
