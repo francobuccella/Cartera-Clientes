@@ -620,8 +620,6 @@ function persist(){
 }
 
 /* ================= PRODUCTOR (nombre + nivel de quien usa esta copia) ================= */
-const PRODUCTOR_KEY = 'cartera_productor_nombre';
-const NIVEL_KEY     = 'cartera_productor_nivel';
 async function loadProductor(){
   const raw = await storageGet(PRODUCTOR_KEY);
   productorNombre = raw || '';
