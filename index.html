@@ -1567,11 +1567,13 @@ async function init(){
 /* ===== Firebase Auth ===== */
 document.getElementById('googleSignInBtn').onclick = ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
+  auth.signInWithRedirect(provider).catch(err => {
     console.error('Error al iniciar sesión:', err);
     alert('No se pudo iniciar sesión. Intentá de nuevo.');
   });
 };
+
+auth.getRedirectResult().catch(err => console.error('Redirect error:', err));
 
 auth.onAuthStateChanged(async user => {
   const loginScreen = document.getElementById('loginScreen');
